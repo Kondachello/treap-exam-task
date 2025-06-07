@@ -1,0 +1,80 @@
+name: C++ CI
+
+on:
+  pull_request
+
+jobs:
+  formatting-check:
+    name: Formatting check
+    runs-on: [self-hosted, ubuntu]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check line breaks
+        run: |
+          ci-extra/check-lines.sh
+
+      - name: Run clang-format style check
+        # TODO use native clang-format
+        uses: jidicula/clang-format-action@v4.14.0
+        with:
+          clang-format-version: '19'
+          check-path: '.'
+
+  test:
+    needs: formatting-check
+    name: "Test (${{ matrix.toolchain.os }}/${{ matrix.toolchain.compiler-id }}, ${{ matrix.build-type }})"
+
+    strategy:
+      fail-fast: false
+      matrix:
+        toolchain:
+          - { os: Linux, compiler-id: GCC,   runner-label: gcc-14 }
+          - { os: Linux, compiler-id: Clang, runner-label: clang-19 }
+        build-type:
+          - Release
+          - Debug
+          - RelWithDebInfo
+          - Sanitized
+          - SanitizedDebug
+
+    runs-on: [self-hosted, ubuntu, base, "${{ matrix.toolchain.runner-label }}"]
+
+    env:
+      CT_CMAKE_PRESET: "Default-${{ matrix.build-type }}"
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup environment variables
+        uses: cardinalby/export-env-action@v2
+        with:
+          envFile: .github/constants.env
+
+      - name: Update tests
+        run: |
+          ci-extra/update-tests.sh
+
+      - name: Build
+        run: |
+          ci-extra/build.sh "$CT_CMAKE_PRESET"
+
+      - name: Run tests
+        run: |
+          if [[ $TESTS_UPDATED -eq 1 ]]; then
+            echo -e '\e[0;33mWARNING: Running a newer version of the tests than you have pushed.\e[0m'
+          fi
+          ci-extra/test.sh "$CT_CMAKE_PRESET"
+
+      - name: Run tests with valgrind
+        if: ${{ matrix.build-type == 'RelWithDebInfo' }}
+        run: |
+          ci-extra/test-valgrind.sh "$CT_CMAKE_PRESET"
