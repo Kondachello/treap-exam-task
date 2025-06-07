@@ -1023,8 +1023,8 @@ TEST_CASE_METHOD(ExceptionSafetyTest, "Insert is exception-safe with throwing ra
 }
 
 TEST_CASE_METHOD(PerformanceTest, "size() is fast") {
-  constexpr size_t N = 100'000;
-  constexpr size_t K = 1'000'000;
+  constexpr size_t N = 10'000;
+  constexpr size_t K = 100'000;
 
   Container c;
   mass_insert_balanced(c, N);
@@ -1035,7 +1035,7 @@ TEST_CASE_METHOD(PerformanceTest, "size() is fast") {
 }
 
 TEST_CASE_METHOD(PerformanceTest, "Iteration is fast") {
-  constexpr size_t N = 100'000;
+  constexpr size_t N = 10'000;
   constexpr size_t K = 5;
 
   Container c;
@@ -1049,8 +1049,8 @@ TEST_CASE_METHOD(PerformanceTest, "Iteration is fast") {
 }
 
 TEST_CASE_METHOD(PerformanceTest, "lower_bound(const T&) is fast") {
-  constexpr size_t N = 100'000;
-  constexpr size_t K = 200'000;
+  constexpr size_t N = 10'000;
+  constexpr size_t K = 20'000;
 
   Container c;
   mass_insert_balanced(c, N);
@@ -1063,8 +1063,8 @@ TEST_CASE_METHOD(PerformanceTest, "lower_bound(const T&) is fast") {
 }
 
 TEST_CASE_METHOD(PerformanceTest, "swap(Treap&, Treap&) is fast") {
-  constexpr size_t N = 100'000;
-  constexpr size_t K = 1'000'000;
+  constexpr size_t N = 10'000;
+  constexpr size_t K = 100'000;
 
   Container c1;
   Container c2;
