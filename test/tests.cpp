@@ -978,6 +978,44 @@ TEST_CASE_METHOD(ExceptionSafetyTest, "insert(T&&) is exception-safe") {
   });
 }
 
+TEST_CASE_METHOD(ExceptionSafetyTest, "insert(T&&) doesnt move from source element") {
+  Container c;
+  c.insert(42);
+
+  Element x(42);
+  auto [it, ok] = c.insert(std::move(x));
+  REQUIRE_FALSE(ok);
+  {
+    FaultInjectionDisable dg;
+    REQUIRE(x == 42);
+  }
+  expect_eq(c, {42});
+}
+
+TEST_CASE_METHOD(ExceptionSafetyTest, "insert(T&&) doesnt move from source exception safety") {
+  faulty_run([] {
+    Container c;
+    mass_insert(c, {3, 2, 5, 1});
+
+    StrongExceptionSafetyGuard sg(c);
+
+    Element x(123);
+    int expected{};
+    {
+      FaultInjectionDisable dg;
+      expected = static_cast<int>(x);
+    }
+
+    try {
+      c.insert(std::move(x));
+    } catch (...) {
+      FaultInjectionDisable dg;
+      REQUIRE(x == expected);
+      throw;
+    }
+  });
+}
+
 TEST_CASE_METHOD(ExceptionSafetyTest, "erase(it) is exception-safe #1") {
   faulty_run([] {
     Container c;
