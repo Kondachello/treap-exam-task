@@ -162,6 +162,17 @@ TEST_CASE_METHOD(CorrectnessTest, "Reinsert after erase") {
   expect_eq(c, {1, 2, 3, 6, 8, 9});
 }
 
+TEST_CASE_METHOD(CorrectnessTest, "insert(T&&) doesnt move from source element") {
+  Container c;
+  c.insert(42);
+
+  Element x(42);
+  auto [it, ok] = c.insert(std::move(x));
+  REQUIRE_FALSE(ok);
+  REQUIRE(x == 42);
+  expect_eq(c, {42});
+}
+
 TEST_CASE_METHOD(CorrectnessTest, "Copy constructor from ascending") {
   Container c;
   mass_insert(c, {1, 2, 3, 4});
@@ -974,43 +985,14 @@ TEST_CASE_METHOD(ExceptionSafetyTest, "insert(T&&) is exception-safe") {
     mass_insert(c, {3, 2, 5, 1});
 
     StrongExceptionSafetyGuard sg(c);
-    c.insert(4);
-  });
-}
-
-TEST_CASE_METHOD(ExceptionSafetyTest, "insert(T&&) doesnt move from source element") {
-  Container c;
-  c.insert(42);
-
-  Element x(42);
-  auto [it, ok] = c.insert(std::move(x));
-  REQUIRE_FALSE(ok);
-  {
-    FaultInjectionDisable dg;
-    REQUIRE(x == 42);
-  }
-  expect_eq(c, {42});
-}
-
-TEST_CASE_METHOD(ExceptionSafetyTest, "insert(T&&) doesnt move from source exception safety") {
-  faulty_run([] {
-    Container c;
-    mass_insert(c, {3, 2, 5, 1});
-
-    StrongExceptionSafetyGuard sg(c);
 
     Element x(123);
-    int expected{};
-    {
-      FaultInjectionDisable dg;
-      expected = static_cast<int>(x);
-    }
 
     try {
       c.insert(std::move(x));
     } catch (...) {
       FaultInjectionDisable dg;
-      REQUIRE(x == expected);
+      REQUIRE(x == 123);
       throw;
     }
   });
